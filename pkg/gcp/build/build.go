@@ -190,7 +190,7 @@ func RunSingleJob(o *Options, jobName, uploaded, version string, subs map[string
 		"builds", "submit",
 		"--verbosity", "info",
 		"--config", o.CloudbuildFile,
-		"--substitutions", strings.Join(s, ","),
+		"--substitutions", fmt.Sprintf("^;^%s", strings.Join(s, ",")),
 	}
 
 	if o.Project != "" {
