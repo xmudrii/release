@@ -39,6 +39,11 @@ stage_file() {
     if [[ $from = /lib*/* || $from = /bin/* || $from = /sbin/* ]]; then
         from="/usr$from"
     fi
+    # skip already staged paths, everything below depends only on the path.
+    # -L is needed as staged symlinks may point outside of the staging dir
+    if [[ -e "${2}/${from}" || -L "${2}/${from}" ]]; then
+        return 0
+    fi
     cp -a --parents "${from}" "${2}"
     # recursively follow symlinks
     if [[ -L "${from}" ]]; then

@@ -32,7 +32,7 @@ COPY patches /patches
 COPY setup-metadata.sh /setup-metadata.sh
 RUN cd / && tar xf /nftables-1.0.6.1.tar.xz && cd nftables-1.0.6.1 && \
     for p in $(cat /patches/series); do patch -p1 --forward < "/patches/$p" || exit 1; done && \
-    ./configure --with-json --with-xtables --disable-man-doc --enable-static --disable-shared --sbindir=/usr/sbin && make && make install && \
+    ./configure --with-json --with-xtables --disable-man-doc --enable-static --disable-shared --sbindir=/usr/sbin && make -j"$(nproc)" && make install && \
     /setup-metadata.sh
 
 RUN ldconfig

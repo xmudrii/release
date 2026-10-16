@@ -34,7 +34,10 @@ endif
 .PHONY: container
 container: check-env
 	echo "Building $(IMGNAME) for the following platforms: $(PLATFORMS)"
-	@for platform in $(PLATFORMS); do \
+	@# Platforms are built in parallel as emulated (QEMU) builds barely use more
+	@# than one core. Output lines are prefixed with the platform being built.
+	@jobs=(); \
+	for platform in $(PLATFORMS); do \
 		echo "Starting build for $${platform} platform"; \
 		docker build \
 			--load \
@@ -44,8 +47,17 @@ container: check-env
 			--tag $(IMAGE)-$${platform##*/}:$(TAG)-$(CONFIG) \
 			--tag $(IMAGE)-$${platform##*/}:latest-$(CONFIG) \
 			$(BUILD_ARGS) \
-			$(BUILD_CONTEXT) || exit 1; \
-	done
+			$(BUILD_CONTEXT) 2>&1 | awk -v p="[$${platform}] " '{ print p $$0; fflush() }' & \
+		jobs+=("$$!=$${platform}"); \
+	done; \
+	failed=""; \
+	for job in "$${jobs[@]}"; do \
+		wait "$${job%%=*}" || failed="$${failed} $${job#*=}"; \
+	done; \
+	if [ -n "$${failed}" ]; then \
+		echo "Build failed for the following platforms:$${failed}"; \
+		exit 1; \
+	fi
 
 .PHONY: push
 push: container
